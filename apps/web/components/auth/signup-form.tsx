@@ -181,14 +181,14 @@ export function SignupForm() {
                     <FormLabel className="cursor-pointer text-[13px] font-normal leading-[1.5] text-ink-2">
                       Concordo com os{" "}
                       <a
-                        href="#"
+                        href="#terms"
                         className="border-b border-dotted border-line-strong"
                       >
                         termos
                       </a>{" "}
                       e a{" "}
                       <a
-                        href="#"
+                        href="#policy"
                         className="border-b border-dotted border-line-strong"
                       >
                         política de privacidade

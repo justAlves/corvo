@@ -10,6 +10,76 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    ports:
+      - "${EVOLUTION_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVER_URL: http://localhost:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-corvo-dev-key}
+      NODE_OPTIONS: "--require /evolution/patches/patch-os-release.cjs"
+      LANGUAGE: pt-BR
+      DEL_INSTANCE: "false"
+      # Empty string makes Evolution fetch latest WA Web version from Baileys CDN.
+      # The baked-in default inside the image is an outdated 2.3000.1015901307 that WA rejects.
+      CONFIG_SESSION_PHONE_VERSION: "2.3000.1038702110"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://postgres:postgres@db:5432/evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/1
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      QRCODE_LIMIT: "30"
+      QRCODE_COLOR: "#0B0F14"
+      WEBHOOK_REQUEST_TIMEOUT_MS: "5000"
+      WEBHOOK_RETRY_INITIAL_DELAY_SECONDS: "1"
+      WEBHOOK_RETRY_MAX_ATTEMPTS: "5"
+      WEBHOOK_RETRY_USE_EXPONENTIAL_BACKOFF: "false"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/bin/bash", "/evolution/patches/lid-patch.sh"]
+    volumes:
+      - evolution_instances:/evolution/instances
+      - ./docker/evolution/patch-os-release.cjs:/evolution/patches/patch-os-release.cjs:ro
+      - ./docker/evolution/lid-patch.sh:/evolution/patches/lid-patch.sh:ro
 
 volumes:
   postgres_data:
+  redis_data:
+  evolution_instances:
