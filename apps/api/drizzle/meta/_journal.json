@@ -43,6 +43,13 @@
       "when": 1777858044547,
       "tag": "0005_dry_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779382261939,
+      "tag": "0006_majestic_mastermind",
+      "breakpoints": true
     }
   ]
 }
