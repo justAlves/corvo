@@ -262,7 +262,7 @@ export function WhatsappSettingsPanel() {
             </div>
             {!connected && !qrSrc ? (
               <p className="text-xs text-ink-3">
-                Sem QR ativo no momento. Clica em "Reconectar" pra gerar um novo.
+                Sem QR ativo no momento. Clica em &ldquo;Reconectar&rdquo; pra gerar um novo.
               </p>
             ) : null}
           </div>

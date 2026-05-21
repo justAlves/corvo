@@ -1,0 +1,25 @@
+# deps
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+
+# build output
+apps/web/.next
+apps/web/out
+
+# local env files (mount or pass via docker env)
+.env
+apps/*/.env
+.env.local
+apps/*/.env.local
+
+# dev artifacts
+**/.turbo
+**/dist
+**/coverage
+
+# docker itself
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+docker/
