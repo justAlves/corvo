@@ -21,7 +21,7 @@ export const auth = betterAuth({
 	},
 	plugins: [admin(), openAPI()],
 	trustedOrigins: [
-		"http://localhost:3000", // Your frontend URL
-		"https://your-production-domain.com", // Your production URL
+		"http://localhost:3000",
+		"https://corvo-henna.vercel.app",
 	],
 });
