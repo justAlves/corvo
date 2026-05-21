@@ -2,10 +2,13 @@ FROM oven/bun:1.3.13-alpine
 
 WORKDIR /app
 
-# Install deps with caching layer
+# Install deps — all workspace manifests needed for bun lockfile consistency (no source code)
 COPY package.json bun.lock ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/ui/package.json ./packages/ui/
 
 RUN bun install --frozen-lockfile
 
