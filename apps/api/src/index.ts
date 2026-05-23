@@ -8,7 +8,7 @@ import { WhatsappModule } from "./modules/whatsapp";
 const app = new Elysia()
   .use(
     cors({
-      origin: 'https://corvo-henna.vercel.app',
+      origin: ['https://krewo.app', 'http://localhost:3000'],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization']

@@ -1,4 +1,4 @@
-export const API_BASE = "https://ps2ohczlyfc2mf8afwzby9lr.72.60.157.197.sslip.io";
+export const API_BASE = "https://api.krewo.app";
 
 export class ApiError extends Error {
   status: number;

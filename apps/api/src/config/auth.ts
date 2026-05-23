@@ -22,6 +22,6 @@ export const auth = betterAuth({
 	plugins: [admin(), openAPI()],
 	trustedOrigins: [
 		"http://localhost:3000",
-		"https://corvo-henna.vercel.app",
+		"https://krewo.app",
 	],
 });
