@@ -125,7 +125,7 @@ export function BillingPanel() {
             <span className="text-sm font-semibold">Plano & Assinatura</span>
           </div>
           <p className="mt-0.5 text-xs text-ink-3">
-            Gerencie seu plano Corvo.
+            Gerencie seu plano Krewo.
           </p>
         </div>
         <Badge variant={STATUS_BADGE_VARIANT[status]} className="flex items-center gap-1.5">

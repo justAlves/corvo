@@ -1,3 +1,4 @@
+import { DashboardGuard } from "@/components/dashboard/dashboard-guard";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 
 export default function DashboardLayout({
@@ -6,9 +7,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-surface">
-      <DashboardSidebar />
-      <main className="min-w-0 overflow-x-hidden">{children}</main>
-    </div>
+    <DashboardGuard>
+      <div className="grid min-h-screen grid-cols-[240px_1fr] bg-surface">
+        <DashboardSidebar />
+        <main className="min-w-0 overflow-x-hidden">{children}</main>
+      </div>
+    </DashboardGuard>
   );
 }

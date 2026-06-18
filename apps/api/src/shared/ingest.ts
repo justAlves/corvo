@@ -35,7 +35,7 @@ export async function fetchSiteText(url: string) {
     redirect: "follow",
     headers: {
       "user-agent":
-        "Mozilla/5.0 (compatible; CorvoOnboardingBot/1.0; +https://corvo.app)",
+        "Mozilla/5.0 (compatible; KrewoOnboardingBot/1.0; +https://krewo.app)",
       accept: "text/html,application/xhtml+xml",
     },
     signal: AbortSignal.timeout(15_000),

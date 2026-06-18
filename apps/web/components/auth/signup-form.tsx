@@ -60,7 +60,7 @@ export function SignupForm() {
     {
       onSuccess: () => {
         setLoading(false)
-        router.push("/dashboard")
+        router.push("/onboarding")
         toast.success("Conta criada!", {
           description: "Tudo certinho, seja bem vindo!"
         })

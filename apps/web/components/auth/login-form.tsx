@@ -27,6 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { type LoginValues, loginSchema } from "@/lib/schemas/auth";
 import { authClient } from "@/lib/authClient";
+import { getOnboardingState } from "@/lib/onboarding";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -51,8 +52,13 @@ export function LoginForm() {
 				rememberMe: data.remember,
 			},
 			{
-				onSuccess() {
-					router.push("/conversas");
+				async onSuccess() {
+					try {
+						const state = await getOnboardingState();
+						router.push(state.completed ? "/dashboard" : "/onboarding");
+					} catch {
+						router.push("/dashboard");
+					}
 					toast.success("Login bem-sucedido! Redirecionando...");
 				},
 				onError(error) {

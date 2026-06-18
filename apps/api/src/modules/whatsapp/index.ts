@@ -28,7 +28,7 @@ const WEBHOOK_EVENTS = [
 ] as const;
 
 function slugForUser(userId: string) {
-  return `corvo-${userId.slice(0, 16)}`.toLowerCase();
+  return `krewo-${userId.slice(0, 16)}`.toLowerCase();
 }
 
 function resolveHash(hash: string | { apikey?: string } | undefined): string {

@@ -6,7 +6,7 @@ interface BrandMarkProps {
 }
 
 /**
- * Geometric raven silhouette — matches the design's "Corvo" logo direction.
+ * Geometric raven silhouette — Krewo logo mark.
  * Pure SVG so it scales and inherits color from the current token.
  */
 export function BrandMark({ size = 28, className }: BrandMarkProps) {
@@ -17,7 +17,7 @@ export function BrandMark({ size = 28, className }: BrandMarkProps) {
         className,
       )}
       style={{ width: size, height: size }}
-      aria-label="Corvo"
+      aria-label="Krewo"
     >
       <svg
         viewBox="0 0 24 24"

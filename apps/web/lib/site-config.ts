@@ -9,11 +9,11 @@ import {
 } from "lucide-react";
 
 export const SITE = {
-  name: "Corvo",
+  name: "Krewo",
   tagline: "Assistente de IA no WhatsApp em 5 minutos",
   description:
     "Conecte seu WhatsApp, descreva seu negócio e receba uma assistente de IA que atende, agenda e vende — em minutos.",
-  domain: "corvo.com.br",
+  domain: "krewo.app",
 } as const;
 
 export type Promise_ = {

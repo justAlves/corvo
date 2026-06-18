@@ -273,7 +273,7 @@ const SETTINGS: SettingsPage = {
 
 export async function getOverview(): Promise<DashboardOverview> {
   return {
-    greetingName: "Corvo",
+    greetingName: "Krewo",
     metrics: METRICS,
     volume: VOLUME,
     intents: INTENTS,
