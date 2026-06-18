@@ -299,6 +299,7 @@ export const WhatsappModule = new Elysia({
           webhook: {
             url: `${env.PUBLIC_WEBHOOK_URL}/whatsapp/webhook`,
             events: [...WEBHOOK_EVENTS],
+            byEvents: false,
           },
         });
 
@@ -505,6 +506,7 @@ export const WhatsappModule = new Elysia({
               webhook: {
                 url: `${env.PUBLIC_WEBHOOK_URL}/whatsapp/webhook`,
                 events: [...WEBHOOK_EVENTS],
+                byEvents: false,
               },
             });
             const apiKey = resolveHash(created.hash);
