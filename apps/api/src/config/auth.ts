@@ -25,4 +25,10 @@ export const auth = betterAuth({
 		"http://localhost:3000",
 		"https://krewo.app",
 	],
+	advanced: {
+		crossSubDomainCookies: {
+			enabled: true,
+			domain: ".krewo.app",
+		},
+	},
 });

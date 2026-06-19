@@ -14,6 +14,7 @@ import { SectionHeader } from "@/components/dashboard/section-header";
 import { VolumeChart } from "@/components/dashboard/volume-chart";
 import { getOverview } from "@/lib/dashboard";
 import { SITE } from "@/lib/site-config";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: `Visão geral — ${SITE.name}`,
@@ -62,7 +63,15 @@ export default async function DashboardOverviewPage({
     raw === "yesterday" || raw === "7d" || raw === "30d" ? raw : "today";
 
   const { from, to } = periodToDates(period);
-  const overview = await getOverview(from, to);
+  let overview;
+  try {
+    overview = await getOverview(from, to);
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("401")) {
+      redirect("/login");
+    }
+    throw err;
+  }
 
   return (
     <div className="px-8 py-8">
