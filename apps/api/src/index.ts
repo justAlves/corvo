@@ -2,7 +2,10 @@ import cors from "@elysiajs/cors";
 import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { AuthModule, OpenAPI } from "./modules/auth";
+import { BillingModule } from "./modules/billing";
+import { DashboardModule } from "./modules/dashboard";
 import { OnboardingModule } from "./modules/onboarding";
+import { startAutoCloseJob } from "./modules/whatsapp/auto-close";
 import { WhatsappModule } from "./modules/whatsapp";
 
 const app = new Elysia()
@@ -23,6 +26,8 @@ const app = new Elysia()
     })
   )
   .use(AuthModule)
+  .use(BillingModule)
+  .use(DashboardModule)
   .use(WhatsappModule)
   .use(OnboardingModule)
   .get("/", () => "Hello Elysia")
@@ -31,3 +36,5 @@ const app = new Elysia()
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
+
+startAutoCloseJob();

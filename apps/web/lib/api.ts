@@ -1,4 +1,6 @@
-export const API_BASE = "https://api.krewo.app";
+import { defaultEnvironment } from "./utils";
+
+export const API_BASE = defaultEnvironment;
 
 export class ApiError extends Error {
   status: number;

@@ -1,6 +1,8 @@
 "use client";
 
+import { Search } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
@@ -11,7 +13,6 @@ import {
   relativeTime,
 } from "@/lib/inbox";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
 import { InboxStatusChip } from "./inbox-status-chip";
 
 interface ConversationListProps {
@@ -21,13 +22,35 @@ interface ConversationListProps {
   error: string | null;
 }
 
+// NFKD decomposes Unicode compatibility chars (𝗔𝗻𝗮, ℓєттєяѕ, fullwidth…)
+// into their ASCII base; stripping combining marks removes accents.
+function normalize(s: string): string {
+  return s
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
 export function ConversationList({
   items,
   selectedId,
   loading,
   error,
 }: ConversationListProps) {
-  const newCount = items.filter((c) => c.status === "ai").length;
+  const [query, setQuery] = useState("");
+
+  const filtered = query.trim()
+    ? items.filter((c) => {
+        const q = normalize(query);
+        return (
+          normalize(contactDisplayName(c)).includes(q) ||
+          (c.contactPhone ?? "").includes(q) ||
+          normalize(c.preview).includes(q)
+        );
+      })
+    : items;
+
+  const newCount = items.filter((c) => c.status !== "closed").length;
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r border-line bg-background">
@@ -41,7 +64,12 @@ export function ConversationList({
       <div className="px-3.5 py-2.5">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-ink-3" />
-          <Input placeholder="Buscar conversas…" className="h-9 pl-8" />
+          <Input
+            placeholder="Buscar conversas…"
+            className="h-9 pl-8"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -52,12 +80,12 @@ export function ConversationList({
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {loading && items.length === 0 ? (
           <li className="px-4 py-3 text-xs text-ink-3">Carregando…</li>
-        ) : items.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <li className="px-4 py-6 text-xs text-ink-3">
-            Sem conversas. Quando alguém te mandar mensagem no WhatsApp, ela aparece aqui.
+            {query ? "Nenhuma conversa encontrada." : "Sem conversas. Quando alguém te mandar mensagem no WhatsApp, ela aparece aqui."}
           </li>
         ) : (
-          items.map((c) => {
+          filtered.map((c) => {
             const active = c.id === selectedId;
             const name = contactDisplayName(c);
             return (

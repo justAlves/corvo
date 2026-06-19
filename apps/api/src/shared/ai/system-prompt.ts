@@ -81,6 +81,13 @@ function knowledgeBlock(docs: KnowledgeRow[]) {
 
 export type AssistantPromptMode = "playground" | "live";
 
+function brazilNow(): string {
+  const d = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const days = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  return `${days[d.getUTCDay()]}, ${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} (horário de Brasília)`;
+}
+
 export function buildAssistantSystemPrompt(params: {
   business: BusinessRow | null;
   assistant: AssistantRow;
@@ -113,6 +120,9 @@ export function buildAssistantSystemPrompt(params: {
     "",
     "## Conhecimento",
     knowledgeBlock(docs),
+    "",
+    `## Data e hora atual`,
+    `Agora são: ${brazilNow()}. Use esta informação quando o cliente perguntar o dia, hora ou quando calcular prazos.`,
     "",
     "## Regras de atendimento",
     "- Responda sempre em português do Brasil.",

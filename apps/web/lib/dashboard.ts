@@ -1,11 +1,23 @@
 /**
- * Dashboard data layer.
- *
- * All UI reads from these typed fetchers. Mock data lives here for now;
- * swap each function body for an `apiFetch<T>("/...")` call once the
- * backend lands. Keep the return shapes stable so the components don't
- * need to change.
+ * Dashboard data layer — server-side fetchers that forward request cookies
+ * to the API so Better Auth sessions are honoured in RSC context.
  */
+
+import { cookies } from "next/headers";
+import { API_BASE } from "./api";
+
+async function serverFetch<T>(path: string): Promise<T> {
+  const cookieStore = await cookies();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Cookie: cookieStore.toString() },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API ${res.status} on ${path}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
 
 export type ConversationStatus = "IA" | "Humano" | "Aguardando";
 
@@ -54,16 +66,40 @@ export interface KnowledgeRow {
   name: string;
   meta: string;
   ok: boolean;
+  kind: string;
 }
 
 export interface AssistantSummary {
   name: string;
-  business: string;
-  activeFor: string;
-  conversations: number;
-  automation: number;
-  avgSeconds: number;
+  businessName: string;
+  publishedAt: string | null;
+  totalConversations: number;
+  automationPct: number;
   greeting: string;
+}
+
+export interface BusinessProfile {
+  name: string;
+  category: string;
+  phone: string;
+  address: string;
+  hoursFrom: string;
+  hoursTo: string;
+  weekend: "" | "sim" | "sabado" | "nao";
+  description: string;
+}
+
+export interface AssistantFull {
+  name: string;
+  tone: "descolada" | "amigavel" | "profissional" | "divertida";
+  avatar: number;
+  greeting: string;
+  permissions: {
+    scheduling: boolean;
+    payments: boolean;
+    handoff: boolean;
+    discounts: boolean;
+  };
 }
 
 export interface DashboardOverview {
@@ -76,6 +112,8 @@ export interface DashboardOverview {
 
 export interface AssistantPage {
   assistant: AssistantSummary;
+  assistantFull: AssistantFull;
+  business: BusinessProfile;
   knowledge: KnowledgeRow[];
 }
 
@@ -244,41 +282,47 @@ const METRICS: Metric[] = [
   { key: "bookings", label: "Agendamentos", value: "23", delta: "+5", icon: "calendar" },
 ];
 
-const KNOWLEDGE: KnowledgeRow[] = [
-  { id: "profile", name: "Perfil do negócio", meta: "auto", ok: true },
-  { id: "hours", name: "Horário e endereço", meta: "auto", ok: true },
-  { id: "menu", name: "Cardápio / catálogo", meta: "24 itens · PDF", ok: true },
-  { id: "faq", name: "FAQ", meta: "18 perguntas", ok: true },
-  { id: "calendar", name: "Integração Google Calendar", meta: "conectado", ok: true },
-  { id: "payments", name: "Gateway de pagamento", meta: "pendente", ok: false },
-];
-
-const ASSISTANT: AssistantSummary = {
-  name: "Lia",
-  business: "seu negócio",
-  activeFor: "Ativa há 3 dias",
-  conversations: 412,
-  automation: 94,
-  avgSeconds: 14,
-  greeting:
-    "Oi! Aqui é a Lia, assistente do {business}. Como posso te ajudar hoje? 💚",
-};
 
 const SETTINGS: SettingsPage = {
   plan: { name: "Negócio", price: "R$ 149/mês", renewsAt: "17/mai" },
   team: { invitedCount: 0 },
 };
 
+/* ------------------------------------------------------------ helpers */
+
+function formatKnowledgeMeta(k: {
+  kind: string;
+  sizeBytes: number;
+  mimeType: string | null;
+}): string {
+  const { kind, sizeBytes, mimeType } = k;
+  const sizeStr =
+    sizeBytes <= 0
+      ? null
+      : sizeBytes < 1024
+        ? `${sizeBytes} B`
+        : `${(sizeBytes / 1024).toFixed(0)} KB`;
+  if (kind === "text") return sizeStr ? `Texto · ${sizeStr}` : "Texto";
+  if (kind === "url") return "Site";
+  const ext =
+    mimeType?.split("/").pop()?.replace("vnd.openxmlformats-officedocument.wordprocessingml.document", "DOCX")?.toUpperCase() ??
+    "Arquivo";
+  return sizeStr ? `${ext} · ${sizeStr}` : ext;
+}
+
 /* ------------------------------------------------------------ fetchers */
 
-export async function getOverview(): Promise<DashboardOverview> {
-  return {
-    greetingName: "Krewo",
-    metrics: METRICS,
-    volume: VOLUME,
-    intents: INTENTS,
-    recent: CONVERSATIONS.slice(0, 4),
-  };
+export async function getOverview(
+  from?: string,
+  to?: string,
+): Promise<DashboardOverview> {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  const qs = params.toString();
+  return serverFetch<DashboardOverview>(
+    `/dashboard/overview${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export async function listConversations(): Promise<Conversation[]> {
@@ -290,7 +334,64 @@ export async function getConversation(id: string): Promise<Conversation | null> 
 }
 
 export async function getAssistantPage(): Promise<AssistantPage> {
-  return { assistant: ASSISTANT, knowledge: KNOWLEDGE };
+  const data = await serverFetch<{
+    business: BusinessProfile | null;
+    assistant: AssistantFull & { publishedAt: string | null };
+    stats: { totalConversations: number; automationPct: number };
+    knowledge: Array<{
+      id: string;
+      title: string;
+      kind: string;
+      sizeBytes: number;
+      mimeType: string | null;
+    }>;
+  }>("/onboarding/me");
+
+  const asst = data.assistant;
+  const biz = data.business;
+
+  const assistant: AssistantSummary = {
+    name: asst?.name ?? "Lia",
+    businessName: biz?.name ?? "seu negócio",
+    publishedAt: asst?.publishedAt ?? null,
+    totalConversations: data.stats.totalConversations,
+    automationPct: data.stats.automationPct,
+    greeting: asst?.greeting ?? "",
+  };
+
+  const assistantFull: AssistantFull = asst ?? {
+    name: "Lia",
+    tone: "descolada",
+    avatar: 0,
+    greeting: "",
+    permissions: {
+      scheduling: true,
+      payments: true,
+      handoff: true,
+      discounts: false,
+    },
+  };
+
+  const business: BusinessProfile = biz ?? {
+    name: "",
+    category: "",
+    phone: "",
+    address: "",
+    hoursFrom: "09:00",
+    hoursTo: "18:00",
+    weekend: "",
+    description: "",
+  };
+
+  const knowledge: KnowledgeRow[] = data.knowledge.map((k) => ({
+    id: k.id,
+    name: k.title || k.kind,
+    meta: formatKnowledgeMeta(k),
+    ok: k.sizeBytes > 0,
+    kind: k.kind,
+  }));
+
+  return { assistant, assistantFull, business, knowledge };
 }
 
 export async function getSettings(): Promise<SettingsPage> {

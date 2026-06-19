@@ -56,6 +56,13 @@ export function ConversationThread({
     onSent();
   }
 
+  async function handleClose() {
+    await setConversationStatus(conversation!.id, "closed");
+    onSent();
+  }
+
+  const isClosed = conversation.status === "closed";
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-surface">
       <header className="flex items-center gap-2.5 border-b border-line bg-background px-5 py-3.5">
@@ -68,9 +75,21 @@ export function ConversationThread({
           <div className="truncate text-sm font-semibold">{name}</div>
           <div className="truncate text-xs text-ink-3">{phone}</div>
         </div>
-        <Button variant="outline" size="sm" onClick={toggleHandover}>
-          {conversation.status === "human" ? "Devolver pra IA" : "Assumir conversa"}
-        </Button>
+        {!isClosed && (
+          <>
+            <Button variant="outline" size="sm" onClick={toggleHandover}>
+              {conversation.status === "human" ? "Devolver pra IA" : "Assumir conversa"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleClose}>
+              Encerrar
+            </Button>
+          </>
+        )}
+        {isClosed && (
+          <span className="mono rounded-full border border-line px-2.5 py-0.5 text-[10px] uppercase tracking-[0.04em] text-ink-3">
+            Encerrada
+          </span>
+        )}
       </header>
 
       <div

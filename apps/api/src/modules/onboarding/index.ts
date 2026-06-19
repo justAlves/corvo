@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import Elysia, { t } from "elysia";
 
 import { drizzle } from "../../config/db";
@@ -6,6 +6,7 @@ import { getAIProvider } from "../../shared/ai";
 import { extractFileText, fetchSiteText } from "../../shared/ingest";
 import { assistant, assistantTones } from "../../shared/tables/assistant.table";
 import { business, weekendOptions } from "../../shared/tables/business.table";
+import { conversation } from "../../shared/tables/conversation.table";
 import { knowledge } from "../../shared/tables/knowledge.table";
 import { user } from "../../shared/tables/user.table";
 import { whatsappInstance } from "../../shared/tables/whatsapp-instance.table";
@@ -189,6 +190,18 @@ export const OnboardingModule = new Elysia({
           .where(eq(knowledge.userId, current.id))
           .orderBy(desc(knowledge.createdAt));
 
+        const [statsRow] = await drizzle
+          .select({
+            total: count(conversation.id),
+            aiCount: sql<number>`count(*) filter (where ${conversation.status} = 'ai')`,
+          })
+          .from(conversation)
+          .where(eq(conversation.userId, current.id));
+
+        const total = statsRow?.total ?? 0;
+        const aiCount = Number(statsRow?.aiCount ?? 0);
+        const automationPct = total > 0 ? Math.round((aiCount / total) * 100) : 0;
+
         return {
           business: biz ? serializeBusiness(biz) : null,
           assistant: asst ? serializeAssistant(asst) : null,
@@ -196,6 +209,7 @@ export const OnboardingModule = new Elysia({
           knowledge: docs.map(serializeKnowledge),
           completed: usr?.onboardingCompleted ?? false,
           completedAt: usr?.onboardingCompletedAt ?? null,
+          stats: { totalConversations: total, automationPct },
         };
       })
 
@@ -231,6 +245,25 @@ export const OnboardingModule = new Elysia({
           return serializeAssistant(row);
         },
         { body: AssistantBody },
+      )
+
+      .get(
+        "/knowledge/:id",
+        async ({ user: current, params, set }) => {
+          const [row] = await drizzle
+            .select()
+            .from(knowledge)
+            .where(
+              and(
+                eq(knowledge.id, params.id),
+                eq(knowledge.userId, current.id),
+              ),
+            )
+            .limit(1);
+          if (!row) { set.status = 404; return { error: "not_found" }; }
+          return { ...serializeKnowledge(row), content: row.content };
+        },
+        { params: t.Object({ id: t.String() }) },
       )
 
       .get("/knowledge", async ({ user: current }) => {
@@ -341,6 +374,29 @@ export const OnboardingModule = new Elysia({
         {
           body: t.Object({
             file: t.File({ maxSize: MAX_UPLOAD_BYTES }),
+          }),
+        },
+      )
+
+      .post(
+        "/knowledge/text",
+        async ({ user: current, body }) => {
+          const [row] = await drizzle
+            .insert(knowledge)
+            .values({
+              userId: current.id,
+              kind: "text",
+              title: body.title,
+              content: body.content,
+              sizeBytes: body.content.length,
+            })
+            .returning();
+          return serializeKnowledge(row);
+        },
+        {
+          body: t.Object({
+            title: t.String({ minLength: 1, maxLength: 200 }),
+            content: t.String({ minLength: 1, maxLength: 50000 }),
           }),
         },
       )

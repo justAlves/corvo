@@ -9,9 +9,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { WhatsappStatusCard } from "@/components/dashboard/whatsapp-status-card";
+import { listInboxConversations } from "@/lib/inbox";
 import { SITE } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -23,15 +25,39 @@ interface NavItem {
   matchPrefix?: boolean;
 }
 
-const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/dashboard/inbox", label: "Caixa de entrada", icon: Inbox, badge: 3, matchPrefix: true },
-  { href: "/dashboard/assistant", label: "Assistente", icon: Sparkles, matchPrefix: true },
-  { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
-];
+const POLL_MS = 10_000;
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const [inboxCount, setInboxCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchCount() {
+      try {
+        const res = await listInboxConversations();
+        const active = res.items.filter((c) => c.status !== "closed").length;
+        setInboxCount(active);
+      } catch {
+        // ignore — badge simply won't show
+      }
+    }
+    void fetchCount();
+    const t = setInterval(fetchCount, POLL_MS);
+    return () => clearInterval(t);
+  }, []);
+
+  const NAV: NavItem[] = [
+    { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
+    {
+      href: "/dashboard/inbox",
+      label: "Caixa de entrada",
+      icon: Inbox,
+      badge: inboxCount ?? undefined,
+      matchPrefix: true,
+    },
+    { href: "/dashboard/assistant", label: "Assistente", icon: Sparkles, matchPrefix: true },
+    { href: "/dashboard/configuracoes", label: "Configurações", icon: Settings },
+  ];
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-line bg-background p-[18px]">

@@ -2,31 +2,34 @@
 
 import { useState } from "react";
 
+import { type AssistantFullData, saveAssistant } from "@/lib/assistant";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 interface WelcomeMessageCardProps {
-  initialValue: string;
-  onSave?: (value: string) => Promise<void> | void;
+  assistantFull: AssistantFullData;
 }
 
-export function WelcomeMessageCard({ initialValue, onSave }: WelcomeMessageCardProps) {
-  const [value, setValue] = useState(initialValue);
+export function WelcomeMessageCard({ assistantFull }: WelcomeMessageCardProps) {
+  const [value, setValue] = useState(assistantFull.greeting);
   const [busy, setBusy] = useState(false);
-  const dirty = value !== initialValue;
+  const [saved, setSaved] = useState(false);
+  const dirty = value !== assistantFull.greeting;
 
   async function save() {
     if (busy) return;
     setBusy(true);
     try {
-      await onSave?.(value);
+      await saveAssistant({ ...assistantFull, greeting: value });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="rounded-lg border border-line bg-card p-[22px] lg:col-span-2">
+    <section className="rounded-lg border border-line bg-card p-[22px]">
       <div className="text-sm font-semibold">Mensagem de boas-vindas</div>
       <p className="mt-0.5 mb-2.5 text-xs text-ink-3">
         Primeiro contato com quem nunca te mandou mensagem
@@ -42,12 +45,12 @@ export function WelcomeMessageCard({ initialValue, onSave }: WelcomeMessageCardP
           variant="ghost"
           size="sm"
           disabled={!dirty || busy}
-          onClick={() => setValue(initialValue)}
+          onClick={() => setValue(assistantFull.greeting)}
         >
           Cancelar
         </Button>
-        <Button size="sm" disabled={!dirty || busy} onClick={save}>
-          Salvar
+        <Button size="sm" disabled={(!dirty && !saved) || busy} onClick={save}>
+          {saved ? "Salvo!" : "Salvar"}
         </Button>
       </div>
     </section>
